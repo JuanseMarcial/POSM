@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>POSM Stock Tracker</title>
+  <style>
+    /* Green & White Theme */
+    body { font-family: Arial, sans-serif; background: #fff; color: #2e7d32; margin: 0; padding: 0; }
+    header { background: #2e7d32; color: #fff; padding: 1rem; text-align: center; }
+    main { padding: 1rem; max-width: 1200px; margin: auto; }
+    .controls { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1rem; }
+    select, input { padding: 0.5rem; border: 1px solid #2e7d32; font-size: 1rem; }
+    button { padding: 0.5rem 1rem; background: #2e7d32; color: #fff; border: none; cursor: pointer; }
+    button:hover { background: #1b5e20; }
+    table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+    th { background: #a5d6a7; padding: 0.5rem; border: 1px solid #ddd; }
+    td { padding: 0.5rem; border: 1px solid #ddd; }
+    @media(max-width: 600px) { .controls { flex-direction: column; } }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>POSM Stock Tracker</h1>
+    <p>Green & White Theme | Track per CEDI Location</p>
+  </header>
+  <main>
+    <div class="controls">
+      <select id="skuSelect"><option value="" disabled selected>Select SKU…</option></select>
+      <select id="cediSelect"><option value="" disabled selected>Select CEDI…</option></select>
+      <select id="txType"><option value="" disabled selected>Type of Transaction…</option><option value="in">Stock In</option><option value="out">Stock Out</option></select>
+      <input type="email" id="emailInput" placeholder="Your Email" />
+      <input type="number" id="qtyInput" placeholder="Quantity" min="1" />
+      <input type="date" id="dateInput" />
+      <button id="addBtn">Add Transaction</button>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>Date</th><th>Email</th><th>CEDI</th><th>Type</th><th>Category</th><th>Brand</th><th>Item Code</th><th>POSM Name</th><th>Total In</th><th>Total Out</th><th>Net Stock</th>
+        </tr>
+      </thead>
+      <tbody id="stockTable"></tbody>
+    </table>
+  </main>
+  <script>
+    const items = [
+      // BANNER
+      {type:'BANNER',category:'BANNER',brand:'BIG',code:'11095',name:'BANNER BIG MANCITY CAMPAIGN 100x200 CM'},
+      {type:'BANNER',category:'BANNER',brand:'BIG',code:'11095',name:'BANNER BIG MS 100 x 200 CM'},
+      {type:'BANNER',category:'BANNER',brand:'BIG',code:'11095',name:'BANNER BIG MULTISERVE 100 x 200 CM'},
+      {type:'BANNER',category:'BANNER',brand:'BIG',code:'11094',name:'BANNER BIG COLA 10THB 100X200 (YELLOW CAP)'},
+      {type:'BANNER',category:'BANNER',brand:'BIG',code:'11094',name:'BANNER BIG COLA 10THB 100X200 (RED CAP)'},
+      {type:'BANNER',category:'BANNER',brand:'BIG',code:'11094',name:'BANNER BIG 360ML 100X200'},
+      {type:'BANNER',category:'BANNER',brand:'BIG',code:'11095',name:'BANNER BIG SONGKRAN 100X200'},
+      {type:'BANNER',category:'BANNER',brand:'BIG',code:'11094',name:'BANNER BIG 465 ml 100X200'},
+      {type:'BANNER',category:'BANNER',brand:'BIG',code:'11094',name:'BANNER Big Cola 200X50 cm.'},
+      {type:'BANNER',category:'BANNER',brand:'BIG',code:'11115',name:'BANNER BIG 100 x 300 CM'},
+      {type:'BANNER',category:'BANNER',brand:'BIG',code:'11131',name:'BANNER RAMADAN 150x300 CM'},
+      {type:'BANNER',category:'BANNER',brand:'BIG TEA',code:'11096',name:'BANNER BIG TEA 300ML 100 x 200 CM'},
+      {type:'BANNER',category:'BANNER',brand:'BIG TEA',code:'11096',name:'BANNER BIG TEA 300ML 100 x 200 CM (NEW)'},
+      {type:'BANNER',category:'BANNER',brand:'BIG TEA',code:'11096',name:'BANNER BigTea 200x50 cm.'},
+      {type:'BANNER',category:'BANNER',brand:'BIO',code:'11103',name:'BANNER BIO 300ML 100 x 200 CM'},
+      {type:'BANNER',category:'BANNER',brand:'DEST',code:'11101',name:'BANNER DEST OPT 40&140ML+PREMIUM BB AND 35&130ML 100 x 200 CM'},
+      {type:'BANNER',category:'BANNER',brand:'DEST',code:'11101',name:'BANNER DEST OPTIMUS 40 & 140ML 100 x 200 CM'},
+      {type:'BANNER',category:'BANNER',brand:'DEST',code:'11129',name:'BANNER DEST BOTTLE 1000 ML 100x200 CM'},
+      {type:'BANNER',category:'BANNER',brand:'DEST',code:'11101',name:'BANNER DEST MULTI SKUs 150 x 300 CM (M1) - FG'},
+      {type:'BANNER',category:'BANNER',brand:'DEST',code:'11101',name:'BANNER DEST MULTI SKUs 100X200'},
+      {type:'BANNER',category:'BANNER',brand:'DEST',code:'11129',name:'BANNER DEST Pack & Bottle 100X200'},
+      {type:'BANNER',category:'BANNER',brand:'DEST',code:'11129',name:'BANNER DEST 100X200'},
+      {type:'BANNER',category:'BANNER',brand:'DEST',code:'11129',name:'BANNER Dest 200x50'},
+      {type:'BANNER',category:'BANNER',brand:'AROMESENS',code:'11129',name:'BANNER Aromesens All SKU 100X200'},
+      {type:'BANNER',category:'BANNER',brand:'DGUSTTO',code:'11097',name:'BANNER DGUSSTO CEREAL 18G 100 x 200 CM'},
+      {type:'BANNER',category:'BANNER',brand:'DGUSTTO',code:'11098',name:'BANNER DGUSSTO RICE 5KG 100 x 200 CM'},
+      {type:'BANNER',category:'BANNER',brand:'DGUSTTO',code:'11099',name:'BANNER DGUSSTO SABA 145G 100 x 200 CM'},
+      {type:'BANNER',category:'BANNER',brand:'FRATTO',code:'11126',name:'BANNER FRATTO ESPRESSO 100 x 200 CM'},
+      {type:'BANNER',category:'BANNER',brand:'FRATTO',code:'11126',name:'BANNER FRATTO ROBUSTA 100 x 200 CM'},
+      {type:'BANNER',category:'BANNER',brand:'SPORADE',code:'11102',name:'BANNER SPORADE 300ML 100 x 200 CM'},
+      {type:'BANNER',category:'BANNER',brand:'VOLT',code:'11093',name:'BANNER VOLT 190ML&200ML&310ML 100 x 200 CM'},
+      {type:'BANNER',category:'BANNER',brand:'VOLT',code:'11093',name:'BANNER VOLT 200ML&310ML 100 x 200 CM'},
+      {type:'BANNER',category:'BANNER',brand:'VOLT',code:'11093',name:'BANNER VOLT BOTTLE 100X200'},
+      {type:'BANNER',category:'BANNER',brand:'VOLT',code:'11093',name:'BANNER Volt Can 200X50 cm.'},
+      {type:'BANNER',category:'BANNER',brand:'VOLT',code:'11093',name:'Banner Volt Can 15THB 100x200 cm'},
+      {type:'BANNER',category:'BANNER',brand:'VOLT',code:'11093',name:'BANNER VOLT BOOSTER 155 ml 100x200 cm'},
+      {type:'BANNER',category:'BANNER',brand:'VOLT',code:'11093',name:'Banner VOLT CAN 190ml 100x200'},
+      {type:'BANNER',category:'BANNER',brand:'DGUSTTO',code:'11094',name:'BANNER D-gussto 200x50 cm.'},
+      // STICKER-POSTER
+      {type:'STICKER-POSTER',category:'POSTER',brand:'DGUSTTO',code:'88888',name:'POSTER DGUSTTO (JASMIN RICE) 50X70 (LARGE)'},
+      {type:'STICKER-POSTER',category:'POSTER',brand:'DGUSTTO',code:'88888',name:'POSTER DGUSTTO (SABA) 50X70 (LARGE)'},
+      {type:'STICKER-POSTER',category:'POSTER',brand:'DGUSTTO',code:'88888',name:'POSTER DGUSSTO CEREAL 50X70 (LARGE)'},
+      {type:'STICKER-POSTER',category:'POSTER',brand:'BIG',code:'88888',name:'POSTER BIG COLA 50X70 (LARGE)'},
+      {type:'STICKER-POSTER',category:'POSTER',brand:'BIG',code:'88888',name:'POSTER BIG ORANGE 50X70 (LARGE)'},
+      {type:'STICKER-POSTER',category:'POSTER',brand:'BIG',code:'88888',name:'POSTER BIG MIX FRUIT 50X70 (LARGE)'},
+      {type:'STICKER-POSTER',category:'POSTER',brand:'BIG',code:'88888',name:'POSTER BIG STRAWBERRY 50X70 (LARGE)'},
+      {type:'STICKER-POSTER',category:'POSTER',brand:'BIG TEA',code:'88888',name:'POSTER BIG TEA 50X70 (LARGE)'},
+      {type:'STICKER-POSTER',category:'POSTER',brand:'VOLT',code:'88888',name:'POSTER VOLT CAN 50X70 (LARGE)'},
+      {type:'STICKER-POSTER',category:'STICKER',brand:'BIG',code:'10967',name:'STICKER BIG 50X70 (LARGE)'},
+      {type:'STICKER-POSTER',category:'STICKER',brand:'DGUSTTO',code:'10967',name:'STICKER DGUSSTO RICE 50X70 (LARGE)'},
+      {type:'STICKER-POSTER',category:'STICKER',brand:'DEST',code:'10967',name:'STICKER DEST 50X70 (LARGE)'},
+      {type:'STICKER-POSTER',category:'STICKER',brand:'BIG TEA',code:'10967',name:'STICKER BIG TEA 50X70 (LARGE)'},
+      {type:'STICKER-POSTER',category:'STICKER',brand:'BIO',code:'10967',name:'STICKER BIO 50X70 (LARGE)'},
+      {type:'STICKER-POSTER',category:'STICKER',brand:'DGUSTTO',code:'10967',name:'STICKER DGUSSTO SABA 50X70 (LARGE)'},
+      {type:'STICKER-POSTER',category:'STICKER',brand:'SPORADE',code:'10967',name:'STICKER SPORADE 50X70 (LARGE)'},
+      // THERMO
+      {type:'THERMO',category:'THERMO',brand:'BIG',code:'11147',name:'THERMO FORMAT BIG CAN 70 X 100 CM (LARGE)'},
+      {type:'THERMO',category:'THERMO',brand:'BIG',code:'11033',name:'THERMO FORMAT BIG 320-360 ML 70 X 100 CM (LARGE)'},
+      {type:'THERMO',category:'THERMO',brand:'VOLT',code:'11035',name:'THERMO FORMAT VOLT 200 ML 70 X 100 CM (LARGE)'},
+      {type:'THERMO',category:'THERMO',brand:'VOLT',code:'11135',name:'THERMO FORMAT VOLT BOOSTER 155 ML 47 x 70 CM (SMALL)'},
+      {type:'THERMO',category:'THERMO',brand:'VOLT',code:'11152',name:'THERMO FORMAT VOLT CAN 190ml 10THB 47x70 (SMALL)'},
+      {type:'THERMO',category:'THERMO',brand:'DEST',code:'11034',name:'THERMO FORMAT DEST OPTIMUS 40 ML 70 X100 CM (LARGE)'},
+      {type:'THERMO',category:'THERMO',brand:'FRATTO',code:'11116',name:'THERMO FORMAT FRATTO ESPRESSO 47 x 70 CM (SMALL)'},
+      {type:'THERMO',category:'THERMO',brand:'FRATTO',code:'11117',name:'THERMO FORMAT FRATTO ESPRESSO 70 x 100 CM (LARGE)'},
+      {type:'THERMO',category:'THERMO',brand:'FRATTO',code:'11116',name:'THERMO FORMAT FRATTO ROBUSTA 47 x 70 CM (SMALL)'},
+      {type:'THERMO',category:'THERMO',brand:'FRATTO',code:'11117',name:'THERMO FORMAT FRATTOROBUSTA 70 x 100 CM (LARGE)'},
+      {type:'THERMO',category:'THERMO',brand:'AROMESENS',code:'11117',name:'THERMO FORMAT Aromesens 70 x 100 CM (LARGE)'},
+      {type:'THERMO',category:'PP BOARD',brand:'AROMESENS',code:'10987',name:'PP board Aromesens Sachet'},
+      {type:'THERMO',category:'PP BOARD',brand:'BIG',code:'10987',name:'PP board (Pallet Display) BIG MANCITY 70x100 cm'},
+      {type:'THERMO',category:'PP BOARD',brand:'BIG',code:'11036',name:'PP board (Tent Card) BIG MANCITY'},
+      {type:'THERMO',category:'PP BOARD',brand:'VOLT',code:'11137',name:'PP board Volt Booster 155 ml 70x100 cm'},
+      // ASSET
+      {type:'ASSET',category:'PRODUCT DISPLAY',brand:'BIG',code:'55555',name:'SIDE RACK BIG'},
+      {type:'ASSET',category:'PRODUCT DISPLAY',brand:'BIG TEA',code:'55555',name:'SIDE RACK BIG TEA'},
+      {type:'ASSET',category:'PRODUCT DISPLAY',brand:'VOLT',code:'55555',name:'SIDE RACK VOLT'},
+      {type:'ASSET',category:'PRODUCT DISPLAY',brand:'DGUSTTO',code:'55555',name:'SIDE RACK DGUSSTO'},
+      {type:'ASSET',category:'PRODUCT DISPLAY',brand:'AJE',code:'',name:'RACK DISPLAY AJE'},
+      {type:'ASSET',category:'PRODUCT DISPLAY',brand:'BIG',code:'55555',name:'SHELF BIG'},
+      {type:'ASSET',category:'PRODUCT DISPLAY',brand:'BIG TEA',code:'55555',name:'SHELF BIG TEA'},
+      {type:'ASSET',category:'PRODUCT DISPLAY',brand:'VOLT',code:'55555',name:'SHELF VOLT'},
+      {type:'ASSET',category:'PRODUCT DISPLAY',brand:'AJE',code:'9999',name:'COOLER AJE'},
+      {type:'ASSET',category:'PRODUCT DISPLAY',brand:'AJE',code:'99999',name:'SMALL ICE BOX (YELLOW)'},
+      {type:'ASSET',category:'PRODUCT DISPLAY',brand:'AJE',code:'99999',name:'ICE BOX AJE'},
+      {type:'ASSET',category:'PRODUCT DISPLAY',brand:'AJE',code:'99999',name:'SMALL ICE BOX (GREEN)'},
+      {type:'ASSET',category:'PRODUCT DISPLAY',brand:'FRATTO',code:'99999',name:'ICE BOX FRATTO'},
+      {type:'ASSET',category:'PRODUCT DISPLAY',brand:'VOLT',code:'',name:'DISPLAY RACK DESK (VOLT)'},
+      {type:'ASSET',category:'PRODUCT DISPLAY',brand:'DEST',code:'',name:'DISPLAY WHITE DEST'},
+      {type:'ASSET',category:'PRODUCT DISPLAY',brand:'DEST',code:'',name:'DISPLAY BLUE DEST'},
+      {type:'ASSET',category:'PRODUCT DISPLAY',brand:'DEST',code:'1234',name:'CLOTHE HOOK DEST'},
+      {type:'ASSET',category:'PRODUCT DISPLAY',brand:'DEST',code:'12345',name:'Strip (DEST)'},
+      {type:'ASSET',category:'PRODUCT DISPLAY',brand:'BIG',code:'',name:'ICE BARREL'},
+      {type:'ASSET',category:'PRODUCT DISPLAY',brand:'DEST',code:'147854',name:'Bluewave BASKET'},
+      {type:'ASSET',category:'PRODUCT DISPLAY',brand:'DEST',code:'777',name:'BUNTING (DEST)'},
+      {type:'ASSET',category:'PRODUCT DISPLAY',brand:'DEST',code:'777',name:'BUNTING (Dest/Aromesens)'},
+      {type:'ASSET',category:'PRODUCT DISPLAY',brand:'AJE',code:'999',name:'APRON'},
+      {type:'ASSET',category:'PRODUCT DISPLAY',brand:'AJE',code:'999',name:'APRON BIG FOOD'},
+      {type:'ASSET',category:'PRODUCT DISPLAY',brand:'AJE',code:'11138',name:'TABLE COLTH'},
+      {type:'ASSET',category:'PRODUCT DISPLAY',brand:'AJE',code:'175697',name:'CATALOGUE'},
+      {type:'ASSET',category:'PRODUCT DISPLAY',brand:'AJE',code:'777',name:'BUNTING (BEVERAGE) LARGE 29.7X42'},
+      {type:'ASSET',category:'PRODUCT DISPLAY',brand:'AJE',code:'777',name:'BUNTING (BEVERAGE) MEDIUM 21X29.7'},
+      // PoP
+      {type:'PoP',category:'PRICE TAG',brand:'DGUSTTO',code:'',name:'Wobbler DGUSSTO SEAWEED'},
+      {type:'PoP',category:'PRICE TAG',brand:'DGUSTTO',code:'',name:'Wobbler DGUSSTO RICE'},
+      {type:'PoP',category:'PRICE TAG',brand:'BIG',code:'',name:'Wobbler BIG'},
+      {type:'PoP',category:'PRICE TAG',brand:'FRATTO',code:'333',name:'PRICE TAG FRATTO 3.5x12 cm'},
+      {type:'PoP',category:'PRICE TAG',brand:'BIG',code:'444',name:'NECKTAG PRICE TAG (BIG)'},
+      {type:'PoP',category:'PRICE TAG',brand:'BIG TEA',code:'444',name:'NECKTAG PRICE TAG (BIG TEA)'},
+      {type:'PoP',category:'PRICE TAG',brand:'VOLT',code:'444',name:'NECKTAG PRICE TAG (VOLT)'},
+      {type:'PoP',category:'PRICE TAG',brand:'AJE',code:'444',name:'NECKTAG PRICE TAG (AJE)'},
+      {type:'PoP',category:'PRICE TAG',brand:'AJE',code:'333',name:'PRICE TAG (AJE)'},
+      {type:'PoP',category:'PRICE TAG',brand:'DEST',code:'333',name:'PRICE TAG (DEST)'},
+      {type:'PoP',category:'PRICE TAG',brand:'AROMESENS',code:'333',name:'PRICE TAG (AROMESENS)'},
+      {type:'PoP',category:'PRICE TAG',brand:'DEST',code:'789',name:'SHELF TACKER (DEST)'},
+      {type:'PoP',category:'STICKER',brand:'FRATTO',code:'',name:'VACCUM STICKER FRATTO 8x10 cm.'},
+      {type:'PoP',category:'STICKER',brand:'AJE',code:'',name:'HEADER FREEZER'},
+      {type:'PoP',category:'STICKER',brand:'AJE',code:'222',name:'TAPE BRAND WINDOWS (AJE)'},
+      {type:'PoP',category:'STICKER',brand:'BIG',code:'222',name:'TAPE BRAND WINDOWS (BIG)'},
+      {type:'PoP',category:'STICKER',brand:'BIG TEA',code:'222',name:'TAPE BRAND WINDOWS (BIG TEA)'},
+      {type:'PoP',category:'STICKER',brand:'VOLT',code:'222',name:'TAPE BRAND WINDOWS (VOLT)'},
+      {type:'PoP',category:'STICKER',brand:'DEST',code:'222',name:'TAPE BRAND WINDOWS (DEST)'},
+      {type:'PoP',category:'STICKER',brand:'BIG',code:'',name:'STOPPER BIG'},
+      {type:'PoP',category:'STICKER',brand:'VOLT',code:'',name:'STOPPER VOLT'},
+      {type:'PoP',category:'STICKER',brand:'AJE',code:'147852',name:'STICKER VISIT CUSTOMER (AJE)'},
+      {type:'PoP',category:'STICKER',brand:'DEST',code:'147987',name:'STICKER VISIT CUSTOMER BLUE WAVE (DEST)'},
+      {type:'PoP',category:'STICKER',brand:'DEST',code:'147987',name:'BLUE WAVE CARD (DEST)'}
+    ];
+    const cedis = ['Ang Thong','Rangsit','Rama II','Chonburi','Chiangmai','Suphan','Ubon'];
+    let transactions = [];
+    const skuSel = document.getElementById('skuSelect');
+    const cediSel = document.getElementById('cediSelect');
+    const txType = document.getElementById('txType');
+    const emailInput = document.getElementById('emailInput');
+    const qtyInput = document.getElementById('qtyInput');
+    const dateInput = document.getElementById('dateInput');
+    const addBtn = document.getElementById('addBtn');
+    const tbody = document.getElementById('stockTable');
+    // Populate dropdowns
+    items.forEach((it,i) => {
+      const opt = document.createElement('option');
+      opt.value = i;
+      opt.textContent = `${it.code} — ${it.name}`;
+      skuSel.appendChild(opt);
+    });
+    cedis.forEach(loc => {
+      const opt = document.createElement('option');
+      opt.value = loc;
+      opt.textContent = loc;
+      cediSel.appendChild(opt);
+    });
+    // Add transaction handler
+    addBtn.addEventListener('click', () => {
+      const idx = skuSel.value;
+      const loc = cediSel.value;
+      const type = txType.value;
+      const email = emailInput.value.trim();
+      const qty = parseInt(qtyInput.value, 10) || 0;
+      const date = dateInput.value;
+      if (!idx || !loc || !type || !email || qty <= 0 || !date) {
+        return alert('Please complete all fields including your email.');
+      }
+      const inAmt = type === 'in' ? qty : 0;
+      const outAmt = type === 'out' ? qty : 0;
+      transactions.push({ item: items[idx], cedi: loc, type, email, date, inAmt, outAmt });
+      // Clear inputs
+      txType.value = '';
+      emailInput.value = '';
+      qtyInput.value = '';
+      dateInput.value = '';
+      renderTable();
+    });
+    // Render aggregated table
+    function renderTable() {
+      const agg = {};
+      transactions.forEach(tx => {
+        const key = tx.item.code + '|' + tx.cedi;
+        if (!agg[key]) {
+          agg[key] = { ...tx.item, cedi: tx.cedi, totalIn: 0, totalOut: 0, lastDate: '', lastEmail: '' };
+        }
+        agg[key].totalIn += tx.inAmt;
+        agg[key].totalOut += tx.outAmt;
+        agg[key].lastDate = tx.date;
+        agg[key].lastEmail = tx.email;
+      });
+      tbody.innerHTML = '';
+      Object.values(agg).forEach(r => {
+        const net = r.totalIn - r.totalOut;
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${r.lastDate}</td>
+          <td>${r.lastEmail}</td>
+          <td>${r.cedi}</td>
+          <td>${r.totalIn > r.totalOut ? 'In' : 'Out'}</td>
+          <td>${r.category}</td>
+          <td>${r.brand}</td>
+          <td>${r.code}</td>
+          <td>${r.name}</td>
+          <td>${r.totalIn}</td>
+          <td>${r.totalOut}</td>
+          <td>${net}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+  </script>
+</body>
+</html>
